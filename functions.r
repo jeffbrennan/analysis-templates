@@ -294,5 +294,5 @@ Format_PVal = function(val) {
 
 
 # Table manipulation ----
-# VLOOKUP column replacement - looks up original var  and replaces it with updated var
+# VLOOKUP column replacement - looks up original var and replaces it with updated var
 target_df$original_var = lookup_df$new_var[match(target_df$original_var, lookup_df$original_var)]
