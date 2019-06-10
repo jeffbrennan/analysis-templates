@@ -121,36 +121,6 @@ Model_Diagnostics = function(predictor, outcome, time, df) {
   
 }
 
-
-# Sig_Summarizer = function(predictor, outcome, time, transformations, TBI_NA, LR_counter) {
-#   t_counter = 1
-  
-#   for (transform in transformations) {
-#     summary_list = list()
-    
-#     r2 = summary(transform)$r.squared
-#     coef = transform$coefficients[predictor]
-#     p_val = summary(transform)$coefficients[2, 4]
-    
-#     summary_list = append(summary_list, outcome)
-#     summary_list = append(summary_list, predictor)
-#     summary_list = append(summary_list, names(transformations[t_counter]))
-#     summary_list = append(summary_list, round(r2, 3))
-#     summary_list = append(summary_list, round(coef, 3))
-#     summary_list = append(summary_list, round(p_val, 3))
-    
-#     summary_list = unlist(summary_list)
-    
-#     if (time == '24_hr')
-#       sig_summary_24hr <<- insertRow(sig_summary_24hr, LR_Counter, summary_list)
-#     else
-#       sig_summary_6mo <<- insertRow(sig_summary_6mo, LR_Counter, summary_list)
-    
-#     LR_Counter <<- LR_Counter + 1
-#     t_counter = t_counter + 1
-#   }
-# }
-
 Handle_Outliers = function(var) {
   # Creates new vars with dropped outliers
   cat('\n', var)
@@ -189,26 +159,6 @@ Handle_Outliers = function(var) {
   cat(paste0("Outliers dropped: ", length(marker_out), "\n"))
 }
 
-# IQR_Summarizer = function(biomarker, duration) {
-#   # LOC
-#   LOC_IQR = IQR(subset(TBI_LOC_df, LOC_Cat==duration)[, biomarker], na.rm=TRUE)
-#   LOC_med = median(subset(TBI_LOC_df, LOC_Cat==duration)[, biomarker], na.rm=TRUE)
-  
-#   Dur_IQR_df[IQR_counter, biomarker] <<- 
-#     paste0(round(LOC_med, 2), '(', round(LOC_IQR, 2), ')')
-  
-#   # PTA
-#   IQR_counter <<- IQR_counter + 1
-  
-#   PTA_IQR = IQR(subset(TBI_PTA_df, PTA_Cat==duration)[, biomarker], na.rm=TRUE)
-#   PTA_med = median(subset(TBI_PTA_df, PTA_Cat==duration)[, biomarker], na.rm=TRUE)
-  
-#   Dur_IQR_df[IQR_counter, biomarker] <<- 
-#     paste0(round(PTA_med, 2), '(', round(PTA_IQR, 2), ')')
-  
-#   IQR_counter <<- IQR_counter + 1
-  
-# }
 
 LR_Test = function(var, num_var, df){
   # Pulls r2 and pvalue from simple LR between two numeric vars
@@ -304,7 +254,7 @@ Lassofier = function(out, pred_time, pred_range, pred_df, out_df) {
   }
 }
 
-# Performs linear regression on each significant predictor identified in 
+# Performs linear regression on each significant predictor identified in LASSO
 Regressifier = function(coef, i, outcome) {
   
   # Data maniplulation
@@ -342,3 +292,7 @@ Format_PVal = function(val) {
   }
 }
 
+
+# Table manipulation ----
+# VLOOKUP column replacement - looks up original var  and replaces it with updated var
+target_df$original_var = lookup_df$new_var[match(target_df$original_var, lookup_df$original_var)]
