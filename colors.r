@@ -39,6 +39,9 @@ clear_geom = c(0, 2, 5)        # square, triangle, diamond
 semi_solid_geom = c(7, 9, 12)  # square, triangle, square
 
 
+# Symbols ----
+
+symbols = c('\u00b2')  # squared
 
 
 
