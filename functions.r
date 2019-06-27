@@ -1,5 +1,5 @@
 # Programmer: Jeff Brennan
-# Last updated: 5/31/2019
+# Last updated: 06/27/2019
 
 # TODO: make functions agnostic
 # Libraries ----
@@ -292,7 +292,28 @@ Format_PVal = function(val) {
   }
 }
 
+# Retrieves p value from linear regression model6
+Model_P <- function (model) {
+  if (class(model) != "lm") stop("Not an object of class 'lm' ")
+  f <- summary(model)$fstatistic
+  p <- pf(f[1],f[2],f[3],lower.tail=F)
+  attributes(p) <- NULL
+  return(p)
+}
 
-# Table manipulation ----
+# Data manipulation ----
 # VLOOKUP column replacement - looks up original var and replaces it with updated var
 target_df$original_var = lookup_df$new_var[match(target_df$original_var, lookup_df$original_var)]
+
+
+# Reorder factor by length
+# Reverse order (high -> low)
+df$Var1 = reorder(IRB_df$Var1, IRB_df$Var1, function(x){ -length(x)})
+
+# Default (low -> high)
+df$Var1 = reorder(IRB_df$Var1, IRB_df$Var1, FUN = length)
+
+
+# Manual reorder
+# length of levels must match original, can swap order etc. to fit viz needs
+df$Var1 = factor(df$Var1, levels= c('a', 'b'))
