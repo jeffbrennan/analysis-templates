@@ -1,0 +1,21 @@
+Template settings for rmarkdown files (formatting, specific packages)
+
+
+```{r, results='asis'}
+# Creates page break between two elements
+cat("\n\n\\pagebreak\n")
+```
+
+
+# General options 
+
+```{r setup, include=FALSE}
+
+# echo=F : hides code chunks in output (typically preferred for sharing with non-analysts)
+knitr::opts_chunk$set(echo = FALSE)
+
+# comment = NA : hides comments from R Console output
+knitr::opts_chunk$set(comment = NA)
+options(qwraps2_markup = "markdown")
+options(fig.align='left')
+```
