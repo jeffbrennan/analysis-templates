@@ -30,6 +30,14 @@ library(kableExtra)
 # Text codes 
 light_colors = c('skyblue', 'slateblue', 'slategray2', 'lightgreen')
 bold_colors = c('dodgerblue', 'darkorchid', 'firebrick1', 'limegreen')
+
+
+# Latex codes 
+
+# gray stripes in table: black!10
+# usage: kable_styling(latex_options = 'striped', stripe_color = 'black!10')
+
+
 # +Gradients ----
 
 
