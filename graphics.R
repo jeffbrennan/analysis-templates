@@ -1,6 +1,3 @@
-# Programmer: Jeff Brennan
-# Last updated: 5/28/2019
-
 
 # Libraries ----
 
@@ -127,7 +124,6 @@ box_comparisons = list( c("4", "6"), c("6", "8"), c("4", "8"))
 ggboxplot(mtcars, x = "cyl", y = "mpg") +
   stat_compare_means(comparisons = box_comparisons, label.y = c(37, 28, 40), label = "p.signif")
 
-
 # Stars + lines using ggplot w/ ggsignif package
 # Allows for more background customization control - lines don't look as good
 ggplot(data = mtcars) +
@@ -135,14 +131,12 @@ ggplot(data = mtcars) +
   geom_boxplot() +
   geom_signif(comparisons = box_comparisons, map_signif_level=TRUE)
 
-
 # With reference line
 ggplot(data = mtcars) +
   aes(x = as.factor(cyl), y = mpg) + 
   geom_hline(aes(yintercept=22), linetype = 'dashed') +
   geom_boxplot() +
   geom_signif(comparisons = box_comparisons, map_signif_level=TRUE)
-
 
 # Histograms ----
 
@@ -166,7 +160,6 @@ ggplot(data = mtcars) +
   theme(panel.background = element_rect(linetype = 1, color='black', fill=NA, size=1.5))
 
 # Scatter plots ----
-
 
 # Standard
 ggplot(data = mtcars) +
@@ -225,7 +218,7 @@ ggplot(data = mtcars) +
 
 # Time series ----
 # X must be time
-# TODO: convvert time series data to dataframe so this works
+# TODO: convert time series data to dataframe so this works
 # ggplot(data = df,
 #        aes_string(x = 'Time', y = TBI_var, group = 'PatientNo')) +
 #   geom_line(color='grey50') +
@@ -271,12 +264,19 @@ out = print(by_group_var,
 # Standard 
 knitr::kable(df)
 
-# Collapse rows automatically, remove some lines
+# Collapse rows automatically, remove extra line separators
 k_table = knitr::kable(df, booktabs = T)
 collapse_rows(k_table)
 
+# Automatically change row color
+# black!10 - a light gray for differentiation of rows 
+# linesep = "" - makes all rows equal height (kable makes every 5th row taller by default)
+  knitr::kable(summary_df, booktabs = T, linesep = "") %>%
+    kable_styling(latex_options = 'striped', stripe_color = 'black!10')
+
+
 # Row_spec - manually change row color etc.. 
 # Latex_hline - remove horizontal divider
-kable(df, 'latex', booktabs = T) %>%
+kable(df, 'latex', booktabs = T, linesep = "") %>%
   row_spec(c(2:3, 6:7), extra_latex_after = "\\rowcolor{gray!10}") %>%
   collapse_rows(1, latex_hline = 'none')
