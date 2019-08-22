@@ -276,7 +276,9 @@ collapse_rows(k_table)
 
 
 # Row_spec - manually change row color etc.. 
+# scale_down - fill page
 # Latex_hline - remove horizontal divider
 kable(df, 'latex', booktabs = T, linesep = "") %>%
+  kable_styling(latex_options = "scale_down") %>%
   row_spec(c(2:3, 6:7), extra_latex_after = "\\rowcolor{gray!10}") %>%
   collapse_rows(1, latex_hline = 'none')
