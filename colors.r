@@ -27,9 +27,16 @@ library(kableExtra)
 
 # +Favorites ----
 
-# Text codes 
+# ggplot colors
 light_colors = c('skyblue', 'slateblue', 'slategray2', 'lightgreen')
 bold_colors = c('dodgerblue', 'darkorchid', 'firebrick1', 'limegreen')
+
+
+# Latex codes 
+
+# light gray stripes in table: black!10 | darker gray stripes: black!30
+# usage: kable_styling(latex_options = 'striped', stripe_color = 'black!10')
+
 # +Gradients ----
 
 
@@ -39,6 +46,8 @@ clear_geom = c(0, 2, 5)        # square, triangle, diamond
 semi_solid_geom = c(7, 9, 12)  # square, triangle, square
 
 
+# Symbols ----
+symbols = c('\u00b2', '\u03bc')  # squared, mu
 
 
 
