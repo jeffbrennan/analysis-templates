@@ -1,21 +1,55 @@
 Template settings for rmarkdown files (formatting, specific packages)
 
+# YAML header
+
+- geometry : sets margins of page
+-  classoption: changes orientation to landscape
+-  mainfont: indicates font for xelatex to produce
+-  output: pdf_document - forces pdf output (default is html)
+-  latex_engine: xelatex - helps with customized font sizes 
+-  knit (function) - changes output directory of Test.pdf
+---
+geometry: margin=1cm
+mainfont: Arial
+classoption:
+  - landscape
+output: 
+  pdf_document:
+    latex_engine: xelatex
+knit: (function(inputFile, encoding) {
+      out_dir = 'foo/bar';
+      rmarkdown::render(inputFile,
+                        encoding=encoding, 
+                        output_file=file.path(dirname(inputFile), out_dir, 'Test.pdf'))})
+---
+
+# Setup block
+- echo = F : hides code chunks in output (typically preferred for sharing with non-analysts)
+- comment = NA : hides comments from R Console output
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(comment = NA)
+
+# Sets output for qwraps tables to markdown and left align figures
+options(qwraps2_markup = "markdown")
+options(fig.align='left')
+
+# Sets directory to root of folder instead of current folder
+# This helps organize rmd files separately from parent folder
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+# Chunk options
 
 ```{r, results='asis'}
 # Creates page break between two elements
 cat("\n\n\\pagebreak\n")
 ```
 
+# Latex inline options 
 
-# General options 
-
-```{r setup, include=FALSE}
-
-# echo=F : hides code chunks in output (typically preferred for sharing with non-analysts)
-knitr::opts_chunk$set(echo = FALSE)
-
-# comment = NA : hides comments from R Console output
-knitr::opts_chunk$set(comment = NA)
-options(qwraps2_markup = "markdown")
-options(fig.align='left')
-```
+- \fontsize{25}{30}: indicates size and vertical spacing of font
+- \fontseries{b}: bolds font
+- \selectfont: applies changes
+- \center: centers code chunk output
