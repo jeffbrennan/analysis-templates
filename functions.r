@@ -1,7 +1,4 @@
-# Programmer: Jeff Brennan
-# Last updated: 5/31/2019
 
-# TODO: make functions agnostic
 # Libraries ----
 
 # Graphics
@@ -288,11 +285,22 @@ Format_PVal = function(val) {
   if (val < 0.001) {
     result = '< 0.001'
   } else {
-    result <<- round(val, 3)
+    result = round(val, 3)
   }
+  return(result)
+}
+
+# Retrieves p value from multivariate model
+Model_P = function(model) {
+  f = summary(model)$fstatistic
+  p = pf(f[1],f[2],f[3],lower.tail=F)
+  attributes(p) = NULL
+
+  return(p)
 }
 
 
-# Table manipulation ----
-# VLOOKUP column replacement - looks up original var and replaces it with updated var
-target_df$original_var = lookup_df$new_var[match(target_df$original_var, lookup_df$original_var)]
+# Converts factor to numeric 
+To_Numeric = function(x) {
+  return(as.numeric(levels(x))[x])
+}
