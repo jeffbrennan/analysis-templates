@@ -2,16 +2,16 @@
 
 Contains customized visualization templates for expedited graphics creation. Sections in the templates.r script will be added based on the type of data the graphics are for. All visualizations will be tested with the mtcars and iris data set. Additional data sets may be added depending on visualization need (time series data etc.). Visualization types will be added to this readme as they are implemented.
 
-## Graphics
+## Cleaning - commonly used data cleaning commands
 
-- Histograms (color, no background, minimal)
-- Box plots (color, no background, minimal)
-  - Faceted box plots
-  - Horizontal box plots
-  - Box plots with significance indicators
-- Scatter plots (color, no background, minimal)
-  - Faceted scatter plots
-  - Scatter plots with linear regression
+
+
+
+## Colors - clean colors and useful symbols
+
+- ggplot preferred bold/muted colors
+- ggplot preferred shapes
+- ascii codes for stats symbols (squared, mu)
 
 ## Functions
 
@@ -24,3 +24,21 @@ Contains customized visualization templates for expedited graphics creation. Sec
 - Shapiro_Get: Shapiro p-values for a series of variables
 - Lassofier: LASSO analysis to identify likely significant predictors
 - Regressifier: linear regression on significant predictors identified in LASSO
+
+## Graphics
+
+- Histograms (color, no background, minimal)
+- Box plots (color, no background, minimal)
+  - Faceted box plots
+  - Horizontal box plots
+  - Box plots with significance indicators
+- Scatter plots (color, no background, minimal)
+  - Faceted scatter plots
+  - Scatter plots with linear regression
+
+
+## Markdown
+- YAML options
+- Setup options
+- Chunk options
+- Latex options
