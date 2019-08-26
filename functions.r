@@ -50,74 +50,6 @@ Plot_Relabeller = function(var, df_type="none") {
   }
   return(new_label)
 }
-
-Plot_Predictor = function(predictor, outcome, predictor_time, TBI_NA) {
-
-  # Plots scatter plot of significant linear regressoion predictors
-  lr_formula = as.formula(paste(outcome, "~", predictor))
-  LR_FIT = lm(lr_formula, data=df)
-  r2 = summary(LR_FIT)$r.squared
-  r2_text = paste0('r2: ', round(r2, 4))
-  
-  ggplot(data = df) +
-    aes_string(x = predictor, y = outcome) +
-    geom_point() +
-    geom_smooth(method='lm', formula = y~x) +
-    labs(title = r2_text)
-  
-  # Assess the impact of transformations on the linear relationship
-  transformations = Model_Diagnostics(predictor, outcome, predictor_time, TBI_NA)
-  return (transformations)
-}
-
-Model_Diagnostics = function(predictor, outcome, time, df) {
-  log_out_c = 0
-  log_pred_c = 0
-  
-  # Adds c (1) to log model when parameter contains 0 to handle error
-  if (min(df[, outcome]) == 0)
-    log_out_c = 1
-  
-  if (min(df[, predictor]) == 0)
-    log_pred_c = 1
-  
-  log_out = log(df[, outcome] + log_out_c)
-  log_pred = log(df[, predictor] + log_pred_c)
-  sqrt_out = sqrt(df[, outcome])
-  sqrt_pred = sqrt(df[, predictor])
-  
-  lr_formula = as.formula(paste(outcome, "~", predictor))
-  log_formula = as.formula(paste(log_out, "~", log_pred))
-  sqrt_formula = as.formula(paste(sqrt_out, "~", sqrt_pred))
-  
-  lr_fit = lm(lr_formula, data=df)
-  log_fit =  lm(log_formula, data=df)
-  sqrt_fit = lm(sqrt_formula, data=df)
-  
-  # fix coefficient names
-  names(lr_fit$coefficients)[2] = predictor
-  names(log_fit$coefficients)[2] = predictor
-  names(sqrt_fit$coefficients)[2] = predictor
-  
-  # Plot diagnostics
-  par(mfrow=c(2,2))
-  plot(lr_fit, main='Untransformed')
-  dev.off()
-
-  par(mfrow=c(2,2))
-  plot(log_fit, main='Log')
-  dev.off()
-  
-  par(mfrow=c(2,2))
-  plot(sqrt_fit, main='Sqrt')
-  dev.off()
-  
-  # Returns models 
-  output = list('Untransformed' = lr_fit, 'Log' = log_fit, 'Sqrt' = sqrt_fit)
-  return(output)
-  
-}
-
 Handle_Outliers = function(var) {
   # Creates new vars with dropped outliers
   cat('\n', var)
@@ -219,6 +151,7 @@ Shapiro_Get = function(df, condition, var){
   }
 }
 
+# Var selection ----
 
 Lassofier = function(out, pred_time, pred_range, pred_df, out_df) {
   # Performs LASSO analysis on a given set of outcomes and predictors
@@ -251,6 +184,9 @@ Lassofier = function(out, pred_time, pred_range, pred_df, out_df) {
   }
 }
 
+
+# Regression ----
+
 # Performs linear regression on each significant predictor identified in LASSO
 Regressifier = function(coef, i, outcome) {
   
@@ -278,8 +214,189 @@ Regressifier = function(coef, i, outcome) {
   return(output)
 }
 
+# Summarizes multiple regression models given model fit
+Regression_Summarizer = function(fit) {
+  
+  # Get p values of all predictors: -1 excludes intercept
+  multi_p_values = summary(fit)[['coefficients']][, 4][-1]
+  
+  # Get coefs of all predictors: -1 excludes intercept
+  multi_coefs = summary(fit)[['coefficients']][, 1][-1]
+  
+  # Only predictors with p < 0.05
+  sig_predict = names(multi_p_values[multi_p_values < 0.05])
+  
+  output = list('sig_preds' = sig_predict, 'preds' = names(multi_p_values), 
+                'p_vals' = multi_p_values, 'coefs' = multi_coefs)
+  return(output)
+  
+}
+
+# Given a multiple linear regression model, creates log, log-link, and square root transformed models
+# Requires: Regression_Summarizer
+Multi_Transform = function(lr_model) { 
+  
+  # Read in model
+  lr_fit = lr_model[['fit']]
+  
+  lr_formula = lr_model[['lr_formula']]
+  df = lr_model[['df']]
+  
+  lr_fit[['call']][['formula']] = lr_formula  # handles parsing error
+  
+  predictors = lr_model[['preds']]
+
+  lr_fit[['call']][['data']] = df
+  
+  # Sqrt model
+  df[, 'sqrt_outcome'] = sqrt(df[, outcome])
+  
+  sqrt_formula = as.formula(paste0('sqrt_outcome ~ ', paste(predictors, collapse =' + ')))
+  sqrt_fit = lm(sqrt_formula, data = df)
+  sqrt_summary = Regression_Summarizer(sqrt_fit)
+  
+  sqrt_results = list('fit' = sqrt_fit, 'df' = df, 'type' = 'Sqrt',
+                      'sig_preds' = sqrt_summary[['sig_preds']],
+                      'preds' = sqrt_summary[['preds']], 
+                      'p_vals' = sqrt_summary[['p_vals']],
+                      'coefs' = sqrt_summary[['coefs']])
+  
+  
+  # Log prep: imputed df for when values need to be altered
+  imp_df <<- df[colnames(df) %in% c(predictors, outcome)]
+
+  # Only outcomes and categorical predictors have values of 0 
+  if(min(imp_df[, outcome], na.rm = T) == 0)
+    imp_df[, outcome] <<- (imp_df[, outcome] + 1)
+
+  # Log model
+  imp_df[, 'log_outcome'] = log(imp_df[, outcome])
+  log_formula = as.formula(paste0('log_outcome ~ ', paste(predictors, collapse =' + ')))
+  log_fit = lm(log_formula, data = imp_df)
+  log_summary = Regression_Summarizer(log_fit)
+  
+  log_results = list('fit' = log_fit, 'df' = imp_df, 'type' = 'Log',
+                          'sig_preds' = log_summary[['sig_preds']],
+                          'preds' = log_summary[['preds']], 
+                          'p_vals' = log_summary[['p_vals']],
+                          'coefs' = log_summary[['coefs']])
+  
+  
+  # Log link model
+  log_link_fit = glm(lr_formula, family=gaussian(link="log"), data=imp_df)
+  log_link_summary = Regression_Summarizer(log_link_fit)
+  
+  log_link_results = list('fit' = log_link_fit, 'df' = imp_df, 'type' = 'Log-link',
+                'sig_preds' = log_link_summary[['sig_preds']],
+                'preds' = log_link_summary[['preds']], 
+                'p_vals' = log_link_summary[['p_vals']],
+                'coefs' = log_link_summary[['coefs']])
+  
+  
+  output = list(log_results, log_link_results, sqrt_results)
+  return(output)
+}
+
+# Summarizes regression results in matrix
+# R: All outcomes | C: All predictors
+# Accounts for interaction terms, which are summarized in a single column
+Multi_Summary = function(output, outcome) {
+
+  predictors = output[['preds']]
+  coefs = output[['coefs']]
+  p_vals = output[['p_vals']]
+  
+  fit = output[['fit']]
+  transformation = output[['type']]
+
+  # Splitting of interaction from predictors
+  interactions = predictors[grepl(':', predictors)]
+    
+  # Model diagnostics
+  png(filename=paste0('viz/summary/', outcome, '_', transformation,
+                      '_multi_diagnostic.png'))
+  par(mfrow=c(2,2))
+  plot(fit)
+  dev.off()
+  
+  for (predictor in predictors) {
+    
+    # Interaction Analysis
+    if (predictor %in% interactions) {
+      inter_results = list()
+      for (interaction in interactions) { 
+        inter_p = round(as.numeric(p_vals[interaction]), 3)
+        result = paste0(interaction, ' p: ', inter_p)
+        inter_results = append(inter_results, result)                            
+      }
+      output = paste0(unlist(inter_results), collapse= ' | ')  
+    
+    # Predictor analysis analysis
+    } else { 
+      result_coef = round(as.numeric(coefs[predictor]), 3)
+      result_p = round(as.numeric(p_vals[predictor]), 3)
+      
+      if (time == '24hr' & result_p < bonf_24hr)
+        result_p = paste0(as.character(result_p), '***')
+      
+      if (time == '6mo' & result_p < bonf_6mo)
+        result_p = paste0(as.character(result_p), '***')
+
+      output = paste0('coef: ', result_coef, ' | p: ', result_p)
+      }
+    # df pointing
+      
+    sum_row = which(df[, 'Outcome'] == outcome &
+                    df[, 'Transformation'] == transformation)
+
+    if (predictor %in% interactions) { 
+      sum_col = which(colnames(df) == 'Interaction')
+    } else { 
+      sum_col = which(colnames(df) == predictor)
+      }
+    
+    df[sum_row, sum_col] <<- output
+      
+  }
+}
+
+# Given a dataframe with rows of potential models based on lasso selection, calculate adjustment for
+# multiple comparisons (Bonferonni)
+Bonf_Calc = function(df) {
+  bonf_counter = 0
+  
+  for (i in 1:nrow(df)) {
+    var_check = max(df[i, 2:10])
+    if (var_check != 0)
+      bonf_counter = bonf_counter + 1
+  }
+  
+  cat('There are', bonf_counter, 'outcomes with at least one selected predictor')
+  bonf_value = 0.05 / bonf_counter
+  return(bonf_value)
+}
+
 
 # Formatting ----
+
+# Takes var, looks up in helper df, returns relabeled var
+# Also supports labels with r2 and p vals from stat summary dfs for plotting
+Relabeller = function(var, df_name="none") { 
+  var_out = var_helper[var_helper$var == var, 2]
+  unit = var_helper[var_helper$var == var, 4]    
+  
+  if (df_name == "linear_regression") {
+    p_val = Age_df[Age_df$var == var, 3]
+    r2 = Age_df[Age_df$var == var, 2]
+    new_label = paste0(var_out, " ", unit, "\n", "R", "\u00b2", " = ", r2, " | p = ", p_val)
+    
+  } else if (df_name == "none") {
+    new_label = paste0(var_out, " ", unit)
+    
+  }
+  return(new_label)
+}
+
 
 Format_PVal = function(val) {
   if (val < 0.001) {
@@ -299,8 +416,18 @@ Model_P = function(model) {
   return(p)
 }
 
-
 # Converts factor to numeric 
 To_Numeric = function(x) {
   return(as.numeric(levels(x))[x])
+}
+
+# Categorizes a series of variables based on specified outcome
+# match_list: list of strings that will partially match with category
+# label: the assigned category label
+# df: Dataframe with the format Var | Label
+# Example: given outcomes a, b, c are tests for mood
+## match_list = c('a', 'b', 'c') | label = 'Mood'
+Test_Measures = function(match_list, label) {
+  matching_out = lapply(match_list, function(x) which(df$Var %like% x))
+  out_measures[unlist(matching_out), 'Label'] <<- label
 }
