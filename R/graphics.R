@@ -207,7 +207,7 @@ ggplot(data = mtcars) +
   geom_tile(aes(fill=mpg)) 
 
 
-# Black and white
+# B&W
 ggplot(data = mtcars) + 
   aes(y=gear, x=cyl) +
   geom_tile(aes(fill=mpg)) + 
@@ -236,13 +236,19 @@ ggplot(data = mtcars) +
   guides(color=guide_legend(reverse=TRUE)) +
   scale_x_discrete(expand=c(0.1,0.1)) 
 
+# B&W for journals
+ggplot(data = mtcars) +
+  aes(x=cyl, y=mpg, group=gear, shape=gear) +
+  labs(title = "INSERT TITLE", subtitle = "INSERT SUBTITLE") +
+  stat_summary(fun.y="mean", geom="line") +
+  stat_summary(fun.y="mean", geom="point") +
+  guides(color=guide_legend(reverse=TRUE)) +
+  scale_x_discrete(expand=c(0.1,0.1)) 
 
-
-# Tables ----
+# Tables (rmd) ----
 
 # Q summary - easy grouping of multiple vars
 # Outputs numeric summaries for full dataframes
-
 library('qwraps2')
 ```{r, results='asis'}
 df = loaded_df
@@ -259,7 +265,7 @@ out = print(by_group_var,
             cnames = c("CUSTOMIZE", "COL", "NAMES"))
 ```
 
-# Kable - simple table printing 
+# Kable 
 
 # Standard 
 knitr::kable(df)
@@ -268,17 +274,33 @@ knitr::kable(df)
 k_table = knitr::kable(df, booktabs = T)
 collapse_rows(k_table)
 
-# Automatically change row color
-# black!10 - a light gray for differentiation of rows 
+# Auto config
+# gray!30 - a light gray for differentiation of rows 
 # linesep = "" - makes all rows equal height (kable makes every 5th row taller by default)
   knitr::kable(summary_df, booktabs = T, linesep = "") %>%
-    kable_styling(latex_options = 'striped', stripe_color = 'black!10')
+    kable_styling(latex_options = 'striped', stripe_color = 'gray!30')
 
 
+# Collapsed rows
 # Row_spec - manually change row color etc.. 
+  # 2:3, 6:7 makes two lines gray every other two lines (used when df is grouped)
 # scale_down - fill page
 # Latex_hline - remove horizontal divider
-kable(df, 'latex', booktabs = T, linesep = "") %>%
+kable(df, 'latex', booktabs = T, linesep = "", row.names = F) %>%
   kable_styling(latex_options = "scale_down") %>%
-  row_spec(c(2:3, 6:7), extra_latex_after = "\\rowcolor{gray!10}") %>%
+  row_spec(c(2:3, 6:7), extra_latex_after = "\\rowcolor{gray!30}") %>%
   collapse_rows(1, latex_hline = 'none')
+
+
+# Conditional coloring
+# Requires rows to not be collapsed
+
+# Highlight and bold significant p values
+kable(df, booktabs = T, row.names = F, linesep = "") %>%
+    kable_styling(latex_options = "scale_down") %>%
+      row_spec(which(df$P_Value < 0.05), bold = T, color = "red")
+
+
+# Long table 
+kable(df, longtable = T, booktabs = T, row.names = F, linesep = "") %>%
+    kable_styling(latex_options = c("repeat_header"))
