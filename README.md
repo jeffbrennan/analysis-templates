@@ -2,18 +2,31 @@
 
 Contains customized visualization templates for expedited graphics creation. Sections in the templates.r script will be added based on the type of data the graphics are for. All visualizations will be tested with the mtcars and iris data set. Additional data sets may be added depending on visualization need (time series data etc.). Visualization types will be added to this readme as they are implemented.
 
-## Cleaning - commonly used data cleaning commands
+Current languages:
+- R (primary)
+- SAS
 
+Future languages:
+- Python
+- STATA
 
+## R
 
+### Cleaning.r - commonly used data cleaning commands
 
-## Colors - clean colors and useful symbols
+- factor reordering
+- df value matching
+- content filtering
+
+More to come
+
+### Colors.r - clean colors and useful symbols
 
 - ggplot preferred bold/muted colors
 - ggplot preferred shapes
 - ascii codes for stats symbols (squared, mu)
 
-## Functions
+### Functions.r
 
 - Plot_Relabeller: Relabels plots to include r2 and p-values (used in facet scenarios)
 - Plot_Predictor: Prints scatter plots given a significant association in a linear model
@@ -25,7 +38,7 @@ Contains customized visualization templates for expedited graphics creation. Sec
 - Lassofier: LASSO analysis to identify likely significant predictors
 - Regressifier: linear regression on significant predictors identified in LASSO
 
-## Graphics
+### Graphics.r
 
 - Histograms (color, no background, minimal)
 - Box plots (color, no background, minimal)
@@ -36,9 +49,19 @@ Contains customized visualization templates for expedited graphics creation. Sec
   - Faceted scatter plots
   - Scatter plots with linear regression
 
+### Markdown.rmd
 
-## Markdown
 - YAML options
 - Setup options
 - Chunk options
 - Latex options
+
+## SAS
+
+### Analysis.sas
+
+Introductory analysis & file manipulation. More to come
+
+### Graphics.sas
+
+Coming soon
