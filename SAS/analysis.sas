@@ -1,21 +1,20 @@
-/* Inputting Data */
+/* ---------------- Setup: Data Handling ---------------- */
 
-
-/* Manual Input */
+/* Manual import */
 /* datalines is interchangeable with cards */
 /* $ needed to indicate categorical var */
-	input CatVar $ NumVar Catvar2 $ Numvar2;
-	datalines;
-	Catvar NumVar Catvar2 Numvar2
-	;
+input Catvar $ Numvar Catvar2 $ Numvar2;
+datalines;
+Catvar Numvar Catvar2 Numvar2
+;
  
-/* Input from space-delimited .txt */
+/* Input from delimited .txt/.csv */
 /* Use import wizard to avoid needing to manually name columns */
 data df;
 	infile '\\path.txt' firstobs=1 dlm=' ';
-	input Var1 Var2;
+	input var1 var2;
 
-/* Set library */
+/* Set library (wd) */
 /* Save dataframes to this library and access via explorer */
 libname lib '\\path';
 
@@ -23,19 +22,102 @@ libname lib '\\path';
 ods rtf file='\\path\results.rtf';
 ods rt close;
 
-/* Tables */
+/* ---------------- Tables ---------------- */
 
-/* Print lines w/ conditions */
+/* Conditionally output vars */
 proc print data=df;
-	var Var1 Var2;
-	where Var1 > 40; 
- 	where Var2 = 'condition';
+	var var1 var2;
+	where var1 > 40; 
+ 	where var2 = 'condition';
 run;
 
 
-/* Frequency metrics */
-/* Given that Var1 and Var2 are categorical */
+/* Frequency tables */
+/* Given that var1 and var2 are categorical */
 proc freq data=df;
-	tables Var1;
-	tables Var1*Var2 / chisq;
+	tables var1;
+	tables var1*var2 / chisq;
+run;
+
+
+/* Statistical testing */
+
+/* t testing */
+
+/* manual critical value given: probability & degrees of freedom */
+data tvalue;
+    input probability df;
+    critval=abs(tinv(probability,df));
+    cards;
+    0.025 23
+    ;
+run;
+proc print data = tvalue;
+run;
+
+
+/* mean interval */
+proc reg data = df;
+    model var1 = var2 / clm alpha = 0.10;
+run;
+
+
+/* individual prediction interval */
+proc reg data = df;
+    model  out = pred /cli alpha = 0.10;
+run;
+
+
+/* correlation - normal */
+PROC CORR DATA = df pearson;
+    VAR var1 var2;
+run;
+
+/* corrleation - pearsons */
+PROC CORR DATA = df spearman;
+    VAR var1 var2;
+run;
+
+
+/* --------- Diagnostics --------- */
+
+/* make model, create resid */
+PROC REG DATA = df;
+    MODEL var1 = var2 / clb;
+    plot out*pred p.*pred / overlay;
+    output out=new P=Pred R=Resid;
+run;
+quit;
+
+/* create semistudentized resid using MSE from model */
+data new;
+set new;
+semistud=resid/48.8233;
+run;
+
+/* normality of semistudentized resid */
+
+proc univariate plot data = new normal;
+    var resid semistud;
+    histogram;
+    qqplot /normal(mu=est sigma=est color=red l=2) square;
+run;
+
+
+/* assess linearity */
+symbol1 v=circle l=32 c = black;
+symbol2 v=star l=32 c = red interpol = join;
+title "scatter plot predicted vs. X overlay";
+PROC GPLOT DATA=NEW;
+    PLOT out*pred Pred*pred/ OVERLAY;
+RUN;
+quit;
+
+
+/* shape of semistudentized resid */
+
+title "plot of semistudentized predicted values
+versus residual";
+proc gplot data = new;
+    plot semistud*pred / vref=0 lvref=2;
 run;
