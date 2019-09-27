@@ -34,6 +34,13 @@ head(USArrests)
 
 test = data.frame(deaths=as.matrix(UKgas), date=time(UKgas))
 
+# Saving plots ----
+
+# Base R
+png(paste0('file', var1, 'name.png'))
+# par(mfrow = c(2,2))  # useful for diagnostic plots
+plot(graphic)  # use plot(model) to output diagnostics  
+dev.off()   # complete write and close
 
 # Boxplots ----
 
@@ -266,7 +273,6 @@ out = print(by_group_var,
 ```
 
 # Kable 
-
 # Standard 
 knitr::kable(df)
 
