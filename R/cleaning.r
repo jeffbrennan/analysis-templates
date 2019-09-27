@@ -60,6 +60,11 @@ new_df = old_list[old_list %in% colnames(old_df)]
 
 # Types ----
 
-# Convert factor to numeric
+# Convert factor of numbers to numeric
 # Optimized: https://stackoverflow.com/questions/3418128/how-to-convert-a-factor-to-integer-numeric-without-loss-of-information
 df$factor_var = as.numeric(levels(df$factor_var))[df$factor_var ]
+
+
+# Convert categorical factor to numeric (for use in models etc)
+# num_list = manually designated numbers to be assigned to levels in factor_var
+df$num_var = c(num_list)[as.numeric(df$factor_var)]
