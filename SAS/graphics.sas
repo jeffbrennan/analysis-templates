@@ -25,3 +25,16 @@ proc reg data = df plots = fitplot(nocli);
     model var1 = var2 / clb;
 run;
 
+
+
+/* nonparametric - LOWESS */
+/* saves output statistics into new df */
+proc loess data = df;
+    model out_var=pred_var / smooth = 0.5;
+    ods output outputstatistics = lowessout;
+run;
+
+/* regression & lowess */
+proc sgscatter data = df;
+    plot resid*pred /loess=(smooth=0.75);
+run;
