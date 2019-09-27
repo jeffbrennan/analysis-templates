@@ -59,7 +59,7 @@ run;
 /* mean interval */
 proc reg data = df;
     model var1 = var2 / clm alpha = 0.10;
-run;
+run;     
 
 
 /* individual prediction interval */
@@ -77,6 +77,18 @@ run;
 PROC CORR DATA = df spearman;
     VAR var1 var2;
 run;
+
+/* f testing */
+
+/* manual assess critical value */
+data FValue;
+    input prob ndf ddf;
+    critval = (Finv(prob,ndf,ddf));
+    cards;
+    prob1 ndfd1 ddf1
+    ;
+run;
+
 
 
 /* --------- Diagnostics --------- */
@@ -114,6 +126,17 @@ RUN;
 quit;
 
 
+/* nonparametric regression */
+title "prediction diagnostic plots for data";
+proc reg data = df plots = prediction(X=pred_var, smooth);
+    model out_var=pred_var/clb clm;
+    output out = regout1 p=pred r=resid
+lclm=lowerbnd uclm=upperbnd;
+run;
+
+
+
+
 /* shape of semistudentized resid */
 
 title "plot of semistudentized predicted values
@@ -121,3 +144,33 @@ versus residual";
 proc gplot data = new;
     plot semistud*pred / vref=0 lvref=2;
 run;
+
+
+/* Tests */
+
+/* Normality - shapiro */
+
+
+
+
+
+
+
+/* TRANSFORMATIONS */
+
+
+/* Box-Cox w/ untransformed x */
+proc transreg data = df ss2 details;
+	model boxcox(var1)=identity(var2);
+run;
+
+
+/* Box-Cox w/ transformed x */
+/* square root: sqrt() */
+proc transreg data = df ss2 details;
+	model boxcox(var1)=log(var2);
+run;
+
+
+
+
