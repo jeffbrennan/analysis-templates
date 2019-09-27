@@ -12,13 +12,27 @@ Future languages:
 
 ## R
 
+### Analysis.r - templates for common analysis techniques
+
+This file incorporates templates and functions from Colors.R, Functions.R, and Cleaning.R
+
+- Regression
+  - Simple linear regression
+    - Diagnostics of model assumptions
+    - Transforming variables (y & x)
+  - Logistic regression
+    - Diagnostics of model assumptions
+    - AUC - ROC curves
+  - Multivariate regression
+    - Diagnostics of model assumptions
+    - Interaction assessments
+    - Predicted outcome using dummy dataframes
+
 ### Cleaning.r - commonly used data cleaning commands
 
 - factor reordering
 - df value matching
 - content filtering
-
-More to come
 
 ### Colors.r - clean colors and useful symbols
 
