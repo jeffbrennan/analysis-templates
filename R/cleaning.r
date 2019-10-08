@@ -25,13 +25,16 @@ library(kableExtra)
 
 # Reshapes df by column name (where columns indicate time points)
 # sep: use to identify separator between var name and time point
-melt_df = reshape(df, direction = "long",
+time_reshaped_df = reshape(df, direction = "long",
                     idvar = c("ID"),
                     timevar = "Time",
                     sep = "_",
                     varying = 2:ncol(df))
 
 
+# Melt by repeated values
+melted_df = melt(df, id=c('Var1', 'Var2'),
+               measure.vars = colnames(adult_rand_df[c('PCL_Gold_Standard', 'PCL_GOSE')]))
 # Data manipulation ----
 # VLOOKUP column replacement - looks up original var and replaces it with updated var
 target_df$original_var = lookup_df$new_var[match(target_df$original_var, lookup_df$original_var)]
