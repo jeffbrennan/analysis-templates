@@ -252,6 +252,58 @@ ggplot(data = mtcars) +
   guides(color=guide_legend(reverse=TRUE)) +
   scale_x_discrete(expand=c(0.1,0.1)) 
 
+
+
+# Logistic regression ----
+
+# Log fit w/statistics % CI
+
+# SE_low and SE_high are manually created in fitted df using model
+# log_label uses conf matrix package output 
+ggplot(data=fitted_df, aes(x=pred_val, y=fitted_out)) + 
+  geom_point(mapping = aes(y=gs_out)) +
+  geom_line(size=1.5, alpha=0.8, color='black') + 
+  geom_line(mapping = aes(y = rf_pred), color='#00971b', size=1.5, alpha=0.8) + 
+  labs(y='outcome',
+       title=paste0('Logistic Fit for ', label,
+                    ' | n=', nrow(source_df))) +
+  geom_ribbon(mapping=aes(ymin=SE_low, ymax=SE_high), alpha=0.2) +
+  annotate("text", label=log_label, hjust=0,
+           x=0.85*(max(source_df[, 'pred_val'])),
+           y = 0.25) + 
+  theme_pubr()
+
+# AUC/ROC
+ggplot(data=fitted_df, aes(d=outcome, m=pred_val)) +
+  geom_roc() +
+  labs(y='Sensitivity', x='1 - Specificity') +
+  theme_pubr()
+
+
+# Nonlinear fitting ----
+
+# dummy_df = created dataframe with single sequenced predictor and remaining preds fixed
+# plots fitted value from spline model to original model
+
+# lr: solid line
+# spline: dotted line
+
+# see analysis.r for dummy df creation
+
+ggplot(data=df, aes(x=pred_var, y=outcome)) +
+  geom_point(data=df, aes(x=pred_var, y=outcome)) +
+  geom_line(data=dummy_df, aes(x=pred_var, y=outcome_rcs, linetype="dotted"), size=0.75) +
+  geom_line(data=dummy_df, aes(x=pred_var, y=outcome_lr, linetype="solid"), size=1) +
+  labs(title = 'outcome ~ pred_var RCS & LR Predicted Values',
+       caption = paste0('RCS: Model prediction with RCS applied to pred_var\n',
+                        'LM: Linear model prediction')) +
+  scale_linetype_manual("", values=c("dotted", "solid"),
+                        labels = c("RCS", "LM")) +
+  theme_pubr() +
+  theme(legend.position = 'right', plot.caption=element_text(hjust=0))
+
+
+
 # Tables (rmd) ----
 
 # Q summary - easy grouping of multiple vars
