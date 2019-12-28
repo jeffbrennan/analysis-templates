@@ -50,6 +50,8 @@ Plot_Relabeller = function(var, df_type="none") {
   }
   return(new_label)
 }
+
+# Creates new var without outlier
 Handle_Outliers = function(var) {
   # Creates new vars with dropped outliers
   cat('\n', var)
@@ -88,22 +90,34 @@ Handle_Outliers = function(var) {
   cat(paste0("Outliers dropped: ", length(marker_out), "\n"))
 }
 
-
-LR_Test = function(var, num_var, df){
-  # Pulls r2 and pvalue from simple LR between two numeric vars
-
-  lr_formula = as.formula(paste(var, ' ~ ', num_var))
-  lr_fit = lm(lr_formula, data = df)
+# Pulls r2, r, and pvalue from simple LR between two numeric vars
+# If data is not normal, gets spearman instead
+Num_Test = function(var, num_var, df){
   
-  r2 = summary(lr_fit)$r.squared
-  p_val = summary(lr_fit)$coefficients[2, 4]
-  
-  lr_df[lr_df$var == var, 2] <<- round(r2, 3)
-  
-  if (p_val < 0.001) {
-    lr_df[lr_df$var == var, 3] <<- '< 0.001'
-  } else {
-    lr_df[lr_df$var == var, 3] <<- round(p_val, 3)
+    row_pointer = which(num_var_df[, 'var'] == var)
+    shapiro_p = shapiro.test(df[, var])[['p.value']]
+    
+    if (shapiro_p < 0.05) {
+      r_val = cor(df[, var], df[, 'num_var'], method = 'spearman')  
+      r2_val = NA
+      p_fmt = NA
+      
+    } else if (shapiro_p >= 0.05) { 
+      num_var_formula = as.formula(paste(var, "~ num_var"))
+      num_var_fit = lm(num_var_formula, data = df)
+      
+      r_val = cor(df[, var], df[,'num_var'], method = 'pearson')
+      r2_val = summary(num_var_fit)$r.squared
+      p_val = summary(num_var_fit)$coefficients[2, 4]
+      
+      bonf_val = 0.05 / 5
+      p_fmt = Format_PVal(p_val, 3, bonf_val)
+      
+    }
+    
+    num_var_df[row_pointer, 3] <<- round(r2_val, 3)
+    num_var_df[row_pointer, 4] <<- p_fmt
+    num_var_df[row_pointer, 5] <<- round(r_val, 3)
   }
 }
 
@@ -592,7 +606,22 @@ To_Numeric = function(x) {
 # df: Dataframe with the format Var | Label
 # Example: given outcomes a, b, c are tests for mood
 ## match_list = c('a', 'b', 'c') | label = 'Mood'
-Test_Measures = function(match_list, label) {
+Var_Labeller = function(match_list, label) {
   matching_out = lapply(match_list, function(x) which(df$Var %like% x))
   out_measures[unlist(matching_out), 'Label'] <<- label
+}
+
+# Returns logistic regression stats using roc library
+# cm: confusion matrix made using caret library
+# actual: actual values; fitted: fitted values
+Get_Fit_Stats = function(cm, actual, fitted, df){
+
+  auc = roc(df[, actual], df[, fitted])[['auc']]
+  
+  plot_stats = list(cm[['byClass']][c(1:4)])
+  stats_out = round(unlist(c(auc, plot_stats)), 4)
+
+  names(stats_out)[c(1, 4:5)] = c('AUC', 'PPV', 'NPV')
+  
+  return(stats_out)
 }
