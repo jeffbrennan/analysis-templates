@@ -202,6 +202,52 @@ trans_summary = Regression_Analyzer('Outcome', 'Predictor', df, lr_summary[7, 'V
 
 # **AUC-ROC ----
 
+# One model
+
+ggplot(ROC_df, aes(d = test_var, m = fitted_var)) +
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = 'gray70') +
+  geom_roc(data = subset(LOC_ROC_df, CT_Cat == 'CT+'), n.cuts = 0) +
+  labs(y = 'Sensitivity', x = '1 - Specificity') +
+  scale_x_continuous("1 - Specificity", breaks = seq(0, 1, by = .1)) +
+  scale_y_continuous("Sensitivity", breaks = seq(0, 1, by = .1)) +
+  theme_pubr()
+
+
+# Two models
+
+facet_1_roc = ggplot(ROC_df, aes(d = LOC, m = fitted_LOC)) +
+  geom_roc(data = subset(ROC_df, CT_Cat == 'CT+'))
+
+facet_2_roc = ggplot(ROC_df, aes(d = LOC, m = fitted_LOC)) +
+  geom_roc(data = subset(ROC_df, CT_Cat == 'CT-'))
+
+facet_1_auc = round(calc_auc(facet_1_roc)[['AUC']], 3)
+facet_2_auc = round(calc_auc(facet_1_roc)[['AUC']], 3)
+
+
+
+ggplot(ROC_df, aes(d = test_var, m = fitted_var, linetype = facet_var)) +
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = 'gray70') +
+  geom_roc(data = subset(ROC_df, facet_var == 'facet_1'), n.cuts = 0,
+           labels = FALSE, pointsize = FALSE, lineend = 'round') +
+  geom_roc(data = subset(ROC_df, facet_var == 'facet_2'), n.cuts = 0,
+           labels = FALSE, pointsize = FALSE, size = 1.3) +
+  labs(y = 'Sensitivity', x = '1 - Specificity') +
+  scale_linetype_manual(name = '',
+                     labels = c(paste0("facet_1 (AUC: ", facet_1_auc, ')'),
+                                paste0("facet_2 (AUC: ", facet_2_auc, ')'),
+                                ''),
+                     values = c('11', 'solid'),
+                     guide = guide_legend(reverse = TRUE)) +
+  scale_x_continuous("1 - Specificity", breaks = seq(0, 1, by = .1)) +
+  scale_y_continuous("Sensitivity", breaks = seq(0, 1, by = .1)) +
+  theme_pubr() +
+  theme(legend.justification = c(1, 0), legend.position = c(0.8, 0.2),
+        legend.text = element_text(size=12)))
+
+
+
+
 # **Summary tables ----
 
 
@@ -216,7 +262,7 @@ trans_summary = Regression_Analyzer('Outcome', 'Predictor', df, lr_summary[7, 'V
 # **Remediation ----
 
 
-# splines - when nonlinearity is not met
+# splines - when linearity is not met
 dummy_df = as.data.frame(matrix(nrow = 100, ncol = 5))
 colnames(dummy_df) = c('y', 'Var2', 'Var3', 'Var4', 'Var5')
 
