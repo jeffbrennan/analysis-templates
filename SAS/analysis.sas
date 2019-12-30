@@ -22,6 +22,44 @@ libname lib '\\path';
 ods rtf file='\\path\results.rtf';
 ods rt close;
 
+
+/* Drop missing observations */
+data df;
+set df;
+if var1=. or var2=. or var3=. then delete;
+keep var1 var2 var3
+run;
+
+
+/* Split data into training and testing */
+
+
+/* split data for validation */
+
+/**split data**/
+proc surveyselect data=gp.dataclean
+out=gp.datatrain
+seed=2102
+method=srs
+samprate=.5
+rep=1;
+run;
+
+data gp.trainid;
+set gp.datatrain;
+train=1;
+keep seqn train;
+run;
+
+data gp.dataval;
+merge gp.trainid gp.dataclean;
+by seqn;
+if train=1 then delete;
+drop train;
+run;
+
+
+
 /* ---------------- Tables ---------------- */
 
 /* Conditionally output vars */
@@ -88,8 +126,6 @@ data FValue;
     prob1 ndfd1 ddf1
     ;
 run;
-
-
 
 /* --------- Regression Diagnostics --------- */
 
