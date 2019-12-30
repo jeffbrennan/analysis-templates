@@ -1,7 +1,6 @@
 Template settings for rmarkdown files (formatting, specific packages)
 
-# YAML header
-
+# PDF - YAML
 - geometry : sets margins of page
 -  classoption: changes orientation to landscape
 -  mainfont: indicates font for xelatex to produce
@@ -23,7 +22,7 @@ knit: (function(inputFile, encoding) {
                         output_file=file.path(dirname(inputFile), out_dir, 'Test.pdf'))})
 ---
 
-# Setup block
+## PDF - Setup block
 - echo = F : hides code chunks in output (typically preferred for sharing with non-analysts)
 - comment = NA : hides comments from R Console output
 
@@ -40,16 +39,134 @@ options(fig.align='left')
 knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
-# Chunk options
+## PDF - Chunk options
 
 ```{r, results='asis'}
 # Creates page break between two elements
 cat("\n\n\\pagebreak\n")
 ```
 
-# Latex inline options 
+## PDF - Latex inline options 
 
 - \fontsize{25}{30}: indicates size and vertical spacing of font
 - \fontseries{b}: bolds font
 - \selectfont: applies changes
 - \center: centers code chunk output
+
+## HTML - YAML
+---
+output:
+  html_document: default
+  word_document: default
+---
+
+## HTML - Setup
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(comment = NA)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+## HTML - reporting 
+
+Sets directory path for manuscript file output
+
+```{r}
+dir_path = paste0('manuscript/figures/')
+```
+
+### Table 1 - tableby package
+
+Requires tableby package and includes helper functions for additional summaries
+
+```{r, results='asis'}
+    
+Format_PVal = function(val) {
+  if (val < 0.001) {
+    result = "< 0.001"
+  } else {
+    result = round(val, 3)
+  }
+  return(result)
+}
+
+swilk = function(x, weights = rep(1, length(x)), ...) {
+  swilk_pval = shapiro.test(x)[['p.value']]   
+  return(Format_PVal(swilk_pval))
+  }
+
+Count_NA = function(x, weights = rep(1, length(x)), ...) {
+  missing = sum(is.na(x))
+  total = length(x)
+  
+  missing_pct = round((missing / total) * 100, 2)
+  
+  if (missing != 0) {
+    out_label = paste0(missing, ' (', missing_pct, '%)')
+  } else {
+    out_label = 'None'
+  }
+  return(out_label)
+}
+
+# Use to reorder vars by count
+demo_df$Var = reorder(demo_df$Var, demo_df$Var, function(x) -length(x))
+
+# Use to change how a var is displayed in the table
+attr(demo_df$Var, 'label') = "Table label"
+
+# All numeric vars will have the following info summarized
+# Count_NA: N(%) missing values
+stat_labels_tbl1 = list(Count_NA = 'Missing values', medianq1q3 = 'Median (Q1, Q3)', 
+                  meansd = 'Mean (SD)', swilk = 'Shapiro-Wilk p-value')
+
+# kwt - kruskal wallis; fe - fisher exact; chisq - chi square
+table_1 = tableby(Facet_Var ~ kwt(Var1) + fe(Var2) + chisq(Var3), data = demo_df,
+              test = TRUE, numeric.stats= c('meansd', 'medianq1q3', 'swilk', 'Count_NA'),
+              stats.labels = stat_labels_tbl1, digits = 2)
+
+# pfootnote automatically adds which tests were conducted as a footnote
+out_1 = summary(table_1, pfootnote = TRUE)
+
+# writes table to html output
+out_1
+```
+
+Saves above table output to word doc
+
+```{r, results='hide'}
+write2word(out_1, paste0(dir_path, 'tables/Table1.doc'),
+           title="Demographic and Clinical Features of Study Patients")
+```
+
+
+### Formatted dataframes (premade tables)
+
+Requires huxtable package. Makes cells contaning '***' (sig p vals) bold
+
+```{r, results = 'asis'}
+as_huxtable(df) %>%
+  add_colnames() %>%
+  set_font_size(10) %>%
+  map_bold(by_regex('[***]' = TRUE)) %>%
+  theme_plain() %>%
+  print_html()
+```
+
+### Figures
+
+All figures should be saved to the workspace in the original source file.
+This makes it easier for plots to be consistent between the source file and the .Rmd,
+while also improving knitting speed.
+
+Template knits the figure to html and saves a publication-ready figure to the 
+manuscript folder (.tiff files are like 20 mb typically)
+
+## Figure 1
+
+```{r, fig.width=10, fig.height=10}
+fig_1
+ggsave(paste0(dir_path, "plots/Fig1"), device = "tiff", width = 10, height = 10)
+```
