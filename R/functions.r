@@ -122,22 +122,15 @@ Num_Test = function(var, num_var, df){
 }
 
 Cat_Test = function(var, cat_var){
-  
-  cat_formula = as.formula(paste(var, ' ~ ', cat_var))
-  cat_result = kruskal.test(cat_formula, data = subset(df, !is.na(cat)))
-  
-  x2 = cat_result$statistic
-  p_val = cat_result$p.value
-  
-  cat_df[cat_df$var == var, 2] <<- round(x2, 3)
-  
-  if (p_val < 0.001) {
-    cat_df[cat_df$var == var, 3] <<- '< 0.001'
-  } else {
-    cat_df[cat_df$var == var, 3] <<- round(p_val, 3)
-  }
+    cat_formula = as.formula(paste(var, "~ cat"))
+    cat_result = wilcox.test(cat_formula, paired=F, data = subset(df, !is.na(cat_var)))
+    
+    x2 = cat_result$statistic
+    p_val = cat_result$p.value
+    
+    cat_df[cat_df$Biomarker == biomarker, 2] <<- round(x2, 3)
+    cat_df[cat_df$Biomarker == biomarker, 3] <<- Format_PVal(p_val)
 }
-
 
 Shapiro_Get = function(df, condition, var){
   # Returns shapiro test for a number of comparisons
@@ -148,15 +141,11 @@ Shapiro_Get = function(df, condition, var){
     sub_len = length(var_sub)
     
     if(sub_len >= 3){
-      
-      var_shapiro = shapiro.test(var_sub)
-      var_p = round(var_shapiro$p.value, 4)
-      
       sub_len = sprintf('%02d', sub_len)
-      
-      if (var_p < 0.001)
-        var_p = '< 0.001'
-      
+
+      var_shapiro = shapiro.test(var_sub)
+      var_p = Format_PVal(var_shapiro[['p.value']])
+
       cat(paste(i, '|| n =', sub_len, '||p:', var_p), '\n')
       
     } else {
