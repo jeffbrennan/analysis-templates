@@ -131,9 +131,9 @@ run;
 
 /* make model, create resid */
 PROC REG DATA = df;
-    MODEL var1 = var2 / clb;
+    MODEL var1 = var2 var3 var4 / clb;
     plot out*pred p.*pred / overlay;
-    output out=new P=Pred R=Resid;
+    output out=new P=Pred R=Resid rstudent = studdelresid student = studres;
 run;
 quit;
 
@@ -150,7 +150,6 @@ proc univariate plot data = new normal;
     qqplot /normal(mu=est sigma=est color=red l=2) square;
 run;
 
-
 /* assess linearity */
 symbol1 v=circle l=32 c = black;
 symbol2 v=star l=32 c = red interpol = join;
@@ -160,7 +159,6 @@ PROC GPLOT DATA=NEW;
 RUN;
 quit;
 
-
 /* nonparametric regression */
 title "prediction diagnostic plots for data";
 proc reg data = df plots = prediction(X=pred_var, smooth);
@@ -168,8 +166,6 @@ proc reg data = df plots = prediction(X=pred_var, smooth);
     output out = regout1 p=pred r=resid
 lclm=lowerbnd uclm=upperbnd;
 run;
-
-
 
 
 /* shape of semistudentized resid */
@@ -205,7 +201,6 @@ run;
 
 
 
-
 /* ------------- Multiple Regression -------------- */
 
 
@@ -229,14 +224,11 @@ start inference;
     finish inference;
 
 
-
 /* Multivar diagnostics */
 
 start outtodata;
-    studres=(1/sqrt(mse))*e; /*compute the
-semistudentized residuals*/
-    sqresid=e##2; /*# is the element wise power
-operator, this line squares each element in e*/
+    studres=(1/sqrt(mse))*e; /*compute the semistudentized residuals*/
+    sqresid=e##2; /*# is the element wise power operator, this line squares each element in e*/
     matout=y||x[,2:p]||yhat||e||studres||sqresid;
     create fattrimidreg from matout [colname =
     {"Response" "Pred1" "Pred2" "preds" "resids" "studres"
@@ -244,7 +236,64 @@ operator, this line squares each element in e*/
     append from matout;
     finish outtodata;
 
+/* variance */
+proc sgscatter data = df;
+plot sqresids*var1 sqresids*var2 sqresids*var3 / loess=(smooth=0.05);
+run;
 
+/* Scatter plots of residuals with loess smooth */
+proc sgscatter data = df;
+plot resids*var1 resids*var2 resids*var3 / loess=(smooth=0.05);
+run;
+
+
+/* Model selection */
+
+/* Mallow's CP */
+
+Proc reg data=df_train outest=modelsel;
+	Model yvar=var1 var2 var3 / selection = cp;
+	Output out=df_mallows r=resids p=preds;
+
+Proc sort data=df_mallows;
+	By _CP_;
+Run;
+
+Title “Data sorted by Cp low to high with variables”;
+Proc print data=df_mallowcs label (OBS=4085)
+	Var _IN_ _P_ _ CP _ yvar var1 var2 var3;
+Run;
+
+
+/* Model validation */
+
+/* MSPR */
+
+data df_all;
+    set df_train df_test;
+run;
+
+title "preparing for computing MSPR";
+proc reg data = df_all;
+    model yvar = var1 var2 var3;
+    output out = df_all_out p=predicted r= resids;
+run;
+
+data df_test_1;
+    set df_all_out;
+Run; 
+
+
+data df_test_1;
+    set df_test_1;
+    preddiffsq=(bp_avg-predicted)**2;
+run;
+
+
+title "model 1 MSPR";
+proc means data =df_test_1;
+    var preddiffsq;
+run;
 
 /* ------------ Matrices -------- */
 
