@@ -203,8 +203,6 @@ run;
 
 /* ------------- Multiple Regression -------------- */
 
-
-
 /* Manually obtain interval estimate for one parameter (b) */
 /* Parent df is matrix */
 /* x_col is integer representing position of desired predictor in 
@@ -406,4 +404,201 @@ quit;
 	print y X b yhat e,bintervallb bintervalub, SSTO, SSE MSE; /*using spaces prints in one table, commas give it a separate table*/
 	run;/*this run statement executes the print above*/
 quit; 
+
+/* SURVIVAL ANALYSIS */
+
+/* KAPLAN MEIER */
+
+/* 
+OPTIONS
+- outs=out_surv: output statistics to var (can print using proc print)
+- conftype=loglog; linear; ASINSQRT: transformation for CI 
+- plots=(s, ls, lls): plot CI (surv, log surv, loglog surv) [base]
+- survival(cl cb=hw): plot conf line and confband
+- timelist=0.5 5 10: report specific S(t)
+- timelim=27: set restricted mean tau
+*/
+
+ods graphics on;
+proc lifetest data=survdat plots=survival(cl);
+time time*censor(0);
+run;
+ods graphics off;
+
+
+/* NELSON AALEN */
+
+/* option a */
+proc lifetest data=survdat plots=(s) nelson;
+time time*censor(0);
+run;
+
+/* option b */
+proc phreg data=survdat plots=(s);
+model time*censor(0)=;
+baseline out = survout cumhaz=cumhaz survival=sur_nelson;
+run;
+
+proc print data=survout noobs;
+run;
+
+
+/* LIFE TABLES */
+
+/* can also use intervals=0,2,4,6,8; if intervals aren't even */
+proc lifetest data=example method=lt intervals=(0 to 8 by 2) plots=(s);
+time Years*Fail(0);
+freq Freq;
+run;
+
+
+/* LOG-RANK TEST */
+/* given trt 1 = 'a' 2='b' */
+ods graphics on;
+proc lifetest data=example_data plots=survival(cl);
+time time*death(0);
+strata trtgrp;
+format trtgrp trt.;
+run;
+ods graphics off;
+
+/* STRATIFIED TEST */
+proc lifetest data=Exposed;
+      time Days*Status(0);
+      strata Sex / group=Treatment;
+run;
+
+/* TREND TEST */
+data bmt; set sashelp.bmt;
+score=.;
+if group='ALL' then score=2;
+if group='AML-Low Risk' then score=1;
+if group='AML-High Risk' then score=3;
+run;
+
+ods graphics on;
+proc lifetest data=bmt plots=(s);
+time t*status(0);
+strata score/trend;
+run;
+ods graphics off;
+
+/* PH REGRESSION */
+
+*fit a model;
+*specify the option for handling ties;
+proc phreg data=actg320;
+model time*censor(0)=tx age sex cd4 priorzdv/ties=efron risklimits;
+run;
+
+*hypothesis testing: wald test;
+proc phreg data=actg320;
+model time*censor(0)=tx age sex cd4 priorzdv/ risklimits;
+Test1: test age=0,sex=0;
+Test2: test age,sex;
+run;
+
+*all three tests--LR, Wald and score;
+proc phreg data=actg320;
+model time*censor(0)=tx age sex cd4 priorzdv/ risklimits;
+contrast 'Testing age and sex' age 1, sex 1/test(all);
+run;
+
+/* COX */
+ods graphics on;
+proc phreg data=larynx_recode plots(overlay)=(survival);
+model time*death(0)=z1 z2 z3 age;
+baseline covariates=spec out=out_surv survival=_all_ cumhaz=_all_/
+         cltype=loglog rowid=label;
+run;
+ods graphics off;
+
+/* ASSUMPTION CHECKS */
+**************************
+*checking PH assumption, using standardized score residuals
+*Note that you also get p-values!
+****************************;
+ods graphics on;
+proc phreg data=bmt;
+class group(param=ref ref="1");
+model t2*d3(0)=group page dage page*dage fab wtime mtx;
+assess ph/resample=1000 npaths=0 seed=1;
+run;
+ods graphics off;
+
+*also try this;
+*larger resample size would provide a more accurate p-value;
+*npath will add simulated realizations of the score process;
+ods graphics on;
+proc phreg data=bmt;
+class group(param=ref ref="1");
+model t2*d3(0)=group page dage page*dage fab wtime mtx;
+assess ph/resample=5000 seed=1 npaths=20;
+run;
+ods graphics off;
+
+
+*******************
+*Checking PH assumption for mtx, by testing an interaction with log-time;
+***************;
+proc phreg data=bmt;
+class group(param=ref ref="1");
+model t2*d3(0)=group page dage page*dage fab wtime mtx mtx_time;
+mtx_time=mtx*log(t2);
+run;
+
+
+***************************
+*checking PH assumption, using the strata statement and baseline cumulative hazards;
+**************************;
+*first create a dataset to define "baseline";
+data spec;
+input group page dage fab wtime;
+datalines;
+1 0 0 0 0
+;
+run;
+
+proc phreg data=bmt;
+class group(param=ref ref="1");
+model t2*d3(0)=group page dage page*dage fab wtime;
+strata mtx;
+baseline covariates=spec cumhaz=_all_ out=out_dat;
+run;
+
+*Open the "out_dat" dataset, you will see that H0(t) are estimated for the two mtx groups; 
+*to make figures, we need to transform the out_dat dataset;
+*transpose the out_dat from long to wide;
+proc sort data=out_dat; by t2; run;
+
+proc transpose data=out_dat out=plotdat0 prefix=cumhaz;
+by t2; id mtx; var cumhaz;
+run;
+
+data plotdat; set plotdat0; 
+retain cumhaz0_1 cumhaz1_1;
+if cumhaz0>=0 then cumhaz0_1=cumhaz0;*logH in the first strata;
+if cumhaz1>=0 then cumhaz1_1=cumhaz1;*logH in the second strata;
+diff_log=log(cumhaz1_1)-log(cumhaz0_1);*difference in log H;
+run;
+
+proc sgplot data=plotdat;
+step x=t2 y=diff_log;
+run;
+
+*Anderson plot;
+proc sgplot data=plotdat;
+step x=cumhaz0_1 y=cumhaz1_1;
+xaxis values=(0 to 1 by 0.1);
+run;
+
+
+/* MULTIVARIATE ANALYSIS */
+
+
+
+/* PREDICTIONS */
+
+
+
 
